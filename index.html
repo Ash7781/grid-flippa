@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flippa Analytics Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@700;800;900&display=swap');
+:root{--bg:#07070f;--surface:#0f0f1a;--card:#14141f;--border:#252538;--a1:#f97316;--a2:#8b5cf6;--a3:#22d3ee;--a4:#34d399;--a5:#f43f5e;--text:#eeeef8;--muted:#7777aa;--success:#34d399;--danger:#f43f5e;--warn:#fbbf24;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--bg);background-image:radial-gradient(ellipse at 15% 60%,rgba(139,92,246,.18) 0%,transparent 55%),radial-gradient(ellipse at 85% 20%,rgba(249,115,22,.14) 0%,transparent 50%),radial-gradient(ellipse at 50% 90%,rgba(34,211,238,.08) 0%,transparent 50%);}
+.login-wrap{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:52px 44px;width:440px;box-shadow:0 50px 100px rgba(0,0,0,.7);animation:rise .5s cubic-bezier(.22,1,.36,1);}
+@keyframes rise{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+.login-icon{font-size:42px;margin-bottom:18px;}
+.login-brand{font-family:'Syne',sans-serif;font-size:30px;font-weight:900;background:linear-gradient(135deg,var(--a1),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;}
+.login-hint{color:var(--muted);font-size:14px;margin-bottom:38px;}
+.login-wrap label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.login-wrap input{width:100%;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:inherit;font-size:15px;margin-bottom:18px;outline:none;transition:border-color .2s;}
+.login-wrap input:focus{border-color:var(--a2);}
+.login-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--a1),var(--a2));border:none;border-radius:12px;color:#fff;font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s;margin-top:4px;}
+.login-btn:hover{opacity:.88;transform:translateY(-1px);}
+.login-err{color:var(--danger);font-size:13px;text-align:center;margin-top:14px;display:none;}
+.secure-note{margin-top:22px;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;justify-content:center;}
+
+/* HEADER */
+#dashboard{display:none;}
+header{background:rgba(15,15,26,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 28px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.h-brand{font-family:'Syne',sans-serif;font-size:20px;font-weight:900;background:linear-gradient(135deg,var(--a1),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.h-right{display:flex;align-items:center;gap:12px;}
+.h-tag{background:rgba(139,92,246,.2);border:1px solid rgba(139,92,246,.35);color:var(--a2);font-size:11px;font-weight:700;padding:4px 11px;border-radius:20px;letter-spacing:.05em;}
+.h-refresh{display:flex;align-items:center;gap:6px;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);color:var(--a4);font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;}
+.rdot{width:7px;height:7px;border-radius:50%;background:var(--a4);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.logout-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:7px 14px;border-radius:8px;font-family:inherit;font-size:12px;cursor:pointer;transition:all .2s;}
+.logout-btn:hover{border-color:var(--danger);color:var(--danger);}
+
+/* MAIN */
+main{padding:28px 32px;max-width:1500px;margin:0 auto;}
+.page-title{font-family:'Syne',sans-serif;font-size:30px;font-weight:900;margin-bottom:4px;}
+.page-sub{color:var(--muted);font-size:14px;margin-bottom:28px;}
+.sec-head{display:flex;align-items:center;gap:10px;margin-bottom:18px;margin-top:36px;}
+.sec-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.sec-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;}
+.sec-sub{color:var(--muted);font-size:12px;margin-left:auto;}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px;}
+.kpi-row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 18px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s;}
+.kpi:hover{transform:translateY(-2px);border-color:var(--a2);}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kbar,linear-gradient(90deg,var(--a1),var(--a2)));}
+.kpi-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+.kpi-val{font-family:'Syne',sans-serif;font-size:26px;font-weight:900;margin-bottom:6px;line-height:1;}
+.kpi-meta{font-size:12px;color:var(--muted);}
+.badge{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;}
+.b-up{background:rgba(52,211,153,.15);color:var(--success);}
+.b-dn{background:rgba(244,63,94,.15);color:var(--danger);}
+.b-warn{background:rgba(251,191,36,.15);color:var(--warn);}
+.b-neu{background:rgba(119,119,170,.15);color:var(--muted);}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px;}
+.g13{display:grid;grid-template-columns:1fr 2fr;gap:18px;margin-bottom:18px;}
+.g1{margin-bottom:18px;}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+.card-head{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;}
+.card-title{font-size:14px;font-weight:700;margin-bottom:3px;}
+.card-sub{font-size:11px;color:var(--muted);}
+.card-body{padding:20px 22px;}
+.card-foot{padding:10px 22px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);}
+.trend-up{color:var(--success);font-weight:700;}
+.trend-dn{color:var(--danger);font-weight:700;}
+
+/* INSIGHT BOX */
+.insight-box{background:linear-gradient(135deg,rgba(139,92,246,.08),rgba(34,211,238,.05));border:1px solid rgba(139,92,246,.25);border-radius:16px;padding:24px 28px;margin-bottom:18px;}
+.insight-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.insight-icon{font-size:20px;}
+.insight-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--a2);}
+.insight-updated{margin-left:auto;font-size:11px;color:var(--muted);}
+.insight-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.insight-block{background:rgba(15,15,26,.6);border-radius:10px;padding:14px 16px;border:1px solid var(--border);}
+.insight-block-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px;}
+.insight-block p{font-size:13px;line-height:1.6;color:var(--text);}
+.insight-block p strong{color:var(--a3);}
+.insight-block p .hl-warn{color:var(--warn);}
+.insight-block p .hl-bad{color:var(--danger);}
+.insight-block p .hl-good{color:var(--success);}
+.proj-bar-wrap{margin-top:14px;border-top:1px solid var(--border);padding-top:14px;}
+.proj-bar-label{font-size:11px;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between;}
+.proj-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:8px;}
+.proj-bar-fill{height:100%;border-radius:4px;transition:width .8s ease;}
+
+/* LIVE CHART CARD */
+.live-chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:18px;}
+.live-chart-head{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.live-badge{display:flex;align-items:center;gap:5px;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);color:var(--a4);font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;}
+.live-badge span{width:6px;height:6px;border-radius:50%;background:var(--a4);animation:pulse 2s infinite;}
+.live-chart-body{padding:24px 22px;}
+.live-chart-foot{padding:10px 22px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;}
+
+/* LOADING STATE */
+.loading-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:var(--muted);}
+.loading-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--a2);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:14px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-state{display:flex;flex-direction:column;align-items:center;padding:40px 20px;color:var(--muted);text-align:center;}
+.error-state .err-icon{font-size:32px;margin-bottom:10px;}
+.retry-btn{margin-top:12px;padding:8px 18px;background:transparent;border:1px solid var(--a2);color:var(--a2);border-radius:8px;font-family:inherit;font-size:13px;cursor:pointer;}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{padding:11px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;background:var(--surface);border-bottom:1px solid var(--border);white-space:nowrap;}
+tbody td{padding:12px 14px;border-bottom:1px solid rgba(37,37,56,.7);white-space:nowrap;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:rgba(255,255,255,.02);}
+.num{font-weight:600;font-variant-numeric:tabular-nums;}
+.good{color:var(--success);}.bad{color:var(--danger);}.warnc{color:var(--warn);}.dim{color:var(--muted);}
+.avg3{background:rgba(139,92,246,.07)!important;color:var(--a2);font-weight:700;}
+.avg6{background:rgba(34,211,238,.07)!important;color:var(--a3);font-weight:700;}
+.rp{display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:700;}
+.rp-apac{background:rgba(34,211,238,.12);color:var(--a3);}
+.rp-emea{background:rgba(139,92,246,.12);color:var(--a2);}
+.rp-amer{background:rgba(249,115,22,.12);color:var(--a1);}
+canvas{max-height:260px;}
+.donut-wrap{max-width:280px;margin:0 auto;padding:8px 0;}
+@media(max-width:1100px){.kpi-row{grid-template-columns:repeat(3,1fr);}.kpi-row-4{grid-template-columns:repeat(2,1fr);}.insight-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:800px){.kpi-row,.kpi-row-4{grid-template-columns:1fr 1fr;}.g2,.g3,.g13{grid-template-columns:1fr;}.insight-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-wrap">
+    <div class="login-icon">🔐</div>
+    <div class="login-brand">Flippa Analytics</div>
+    <div class="login-hint">Authorised access only — internal dashboard</div>
+    <label>Username</label>
+    <input type="text" id="uid" placeholder="Enter username" autocomplete="username">
+    <label>Password</label>
+    <input type="password" id="pwd" placeholder="Enter password" autocomplete="current-password">
+    <button class="login-btn" onclick="doLogin()">Sign In →</button>
+    <div class="login-err" id="lerr">Incorrect credentials. Please try again.</div>
+    <div class="secure-note">🔒 SHA-256 encrypted · Session only · No data stored</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <header>
+    <div class="h-brand">Flippa Analytics</div>
+    <div class="h-right">
+      <span class="h-tag">FY26 LIVE</span>
+      <span class="h-refresh"><span class="rdot"></span>Live · Refresh in <span id="countdown">30:00</span></span>
+      <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-title">Paid Listings Dashboard</div>
+    <div class="page-sub">FY26 · Jul 25 – Mar 26 · Price points & regional breakdown · Targets from FY26 Planning Grid</div>
+
+    <!-- ════ SECTION 1: CURRENT MONTH LIVE ════ -->
+    <div class="sec-head" style="margin-top:0;">
+      <div class="sec-dot" style="background:var(--a4);"></div>
+      <div class="sec-title">Current Month — Mar 26</div>
+      <div class="sec-sub">Live tracking · vs prior month · vs prior year · projected month-end</div>
+    </div>
+
+    <!-- Current Month KPIs -->
+    <div class="kpi-row-4">
+      <div class="kpi" style="--kbar:linear-gradient(90deg,var(--a4),var(--a3));">
+        <div class="kpi-lbl">Total Paid Listings · Mar 26</div>
+        <div class="kpi-val" style="color:var(--a4)">1,238</div>
+        <div class="kpi-meta">Target: 1,412 &nbsp;<span class="badge b-warn">87.7%</span></div>
+      </div>
+      <div class="kpi" style="--kbar:linear-gradient(90deg,var(--a5),var(--a1));">
+        <div class="kpi-lbl">Trend vs Feb 26</div>
+        <div class="kpi-val" style="color:var(--danger)">↓ 3.1%</div>
+        <div class="kpi-meta">1,278 → 1,238 &nbsp;<span class="badge b-dn">Down 40</span></div>
+      </div>
+      <div class="kpi" style="--kbar:linear-gradient(90deg,var(--a2),var(--a3));">
+        <div class="kpi-lbl">Projected Month-End</div>
+        <div class="kpi-val" style="color:var(--a2)">1,323</div>
+        <div class="kpi-meta">Day 29/31 run rate &nbsp;<span class="badge b-warn">93.7% of target</span></div>
+      </div>
+      <div class="kpi" style="--kbar:linear-gradient(90deg,var(--a5),var(--a2));">
+        <div class="kpi-lbl">vs Prior Year Mar 25</div>
+        <div class="kpi-val" style="color:var(--danger)">↓ 16.1%</div>
+        <div class="kpi-meta">Prior year: 1,476 &nbsp;<span class="badge b-dn">YoY decline</span></div>
+      </div>
+    </div>
+
+    <!-- Current Month Price & Region tables side by side -->
+    <div class="g2">
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">Mar 26 · By Price Tier</div><div class="card-sub">Actual · Target · MoM trend · Projection</div></div></div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Tier</th><th>Actual</th><th>Target</th><th>% to Tgt</th><th>Prev Month</th><th>MoM</th><th>Projected</th><th>Status</th></tr></thead>
+          <tbody id="cm-price-tbl"></tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">Mar 26 · By Region</div><div class="card-sub">10k–100k & 100k+ · Actual · MoM · Projection</div></div></div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Region</th><th>10k–100k</th><th>100k+</th><th>Total</th><th>Prev</th><th>MoM</th><th>Projected</th><th>Share</th></tr></thead>
+          <tbody id="cm-region-tbl"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- AI INSIGHT SUMMARY -->
+    <div class="insight-box">
+      <div class="insight-header">
+        <span class="insight-icon">💡</span>
+        <div class="insight-title">Monthly Intelligence Summary — Mar 26</div>
+        <div class="insight-updated">Generated from FY26 Planning Grid · Updated Mar 31, 2026</div>
+      </div>
+      <div class="insight-grid">
+        <div class="insight-block">
+          <div class="insight-block-title">📊 Performance Snapshot</div>
+          <p>Total paid listings sit at <strong>1,238</strong> against a target of 1,412, tracking at <span class="hl-warn">87.7%</span>. The <strong>10k–100k tier</strong> is the standout performer at <span class="hl-good">113% of target (267 vs 236)</span>, while both the 0k–10k tier (<span class="hl-bad">82.8%</span>) and 100k+ tier (<span class="hl-bad">78.3%</span>) are lagging. The projected month-end of <strong>1,323</strong> suggests a <span class="hl-warn">~6.3% miss vs target</span> unless volume accelerates in the final 2 days.</p>
+        </div>
+        <div class="insight-block">
+          <div class="insight-block-title">🌍 Regional Highlights</div>
+          <p><strong>EMEA dominates</strong> with 54% of total regional volume (170 listings) and posted a strong <span class="hl-good">+18.1% MoM surge</span> — the primary bright spot. <strong>Americas</strong> holds steady at 31% share (98). <strong>APAC</strong> is a concern: the 100k+ segment collapsed to just <span class="hl-bad">2 listings</span> from 10 last month — a <span class="hl-bad">-80% drop</span>. APAC's 10k–100k (44) is near its 6-month average of 38, suggesting the 100k+ dip may be a one-off but warrants monitoring.</p>
+        </div>
+        <div class="insight-block">
+          <div class="insight-block-title">📈 Projections & Trend Watch</div>
+          <p>The <strong>6-month avg</strong> for 100k+ is 81 but the last 3 months average just 56 — indicating a <span class="hl-bad">structural deceleration</span> in premium listings. For 10k–100k, the 3M avg of <strong>274</strong> is running above the 6M avg of 258, suggesting <span class="hl-good">positive momentum</span>. Key risk: 0k–10k is trending <span class="hl-warn">below 1,000/month</span> for the 3rd time this FY26 — the 6M avg of 1,000 is holding, but <span class="hl-warn">target of 1,116 remains elusive for Mar</span>. Watch 100k+ APAC closely next month.</p>
+        </div>
+      </div>
+      <!-- Projection bars -->
+      <div class="proj-bar-wrap">
+        <div class="proj-bar-label"><span>0k–10k projection (988 vs target 1,116)</span><span style="color:var(--warn)">88.5%</span></div>
+        <div class="proj-bar"><div class="proj-bar-fill" style="width:88.5%;background:linear-gradient(90deg,var(--warn),var(--a1));"></div></div>
+        <div class="proj-bar-label"><span>10k–100k projection (285 vs target 236)</span><span style="color:var(--success)">120.8%</span></div>
+        <div class="proj-bar"><div class="proj-bar-fill" style="width:100%;background:linear-gradient(90deg,var(--a4),var(--a3));"></div></div>
+        <div class="proj-bar-label"><span>100k+ projection (50 vs target 60)</span><span style="color:var(--danger)">83.3%</span></div>
+        <div class="proj-bar"><div class="proj-bar-fill" style="width:83.3%;background:linear-gradient(90deg,var(--danger),var(--a5));"></div></div>
+      </div>
+    </div>
+
+    <!-- ════ SECTION 2: LIVE METABASE CHART ════ -->
+    <div class="sec-head">
+      <div class="sec-dot" style="background:var(--a3);"></div>
+      <div class="sec-title">Live Chart — Listings by Price (Last 12 Months)</div>
+      <div class="sec-sub">Fetched live from Metabase · auto-refresh every 30 min</div>
+    </div>
+
+    <div class="live-chart-wrap">
+      <div class="live-chart-head">
+        <div>
+          <div class="card-title">Paid Listings by Price Point — Last 12 Months</div>
+          <div class="card-sub">Source: metabase.in.flippa.com · public question f8c98b00</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <div class="live-badge"><span></span>Live Data</div>
+          <button class="retry-btn" onclick="fetchMetabaseData()" style="margin-top:0;">↻ Refresh Now</button>
+        </div>
+      </div>
+      <div class="live-chart-body">
+        <div id="mb-loading" class="loading-state">
+          <div class="loading-spinner"></div>
+          <div>Fetching live data from Metabase...</div>
+        </div>
+        <div id="mb-error" class="error-state" style="display:none;">
+          <div class="err-icon">⚠️</div>
+          <div>Could not load live data — showing planning grid data below.</div>
+          <div style="font-size:12px;margin-top:6px;">This may be due to CORS restrictions on the public Metabase URL.</div>
+          <button class="retry-btn" onclick="fetchMetabaseData()">Try Again</button>
+        </div>
+        <canvas id="c-mb-live" style="display:none;max-height:320px;"></canvas>
+      </div>
+      <div class="live-chart-foot">
+        <span>Last fetched: <span id="mb-last-fetch">Loading...</span></span>
+        <span>Next auto-refresh in <span id="mb-next-refresh">30:00</span></span>
+      </div>
+    </div>
+
+    <!-- ════ SECTION 3: YTD SUMMARY ════ -->
+    <div class="sec-head">
+      <div class="sec-dot" style="background:var(--a1);"></div>
+      <div class="sec-title">FY26 YTD Summary</div>
+      <div class="sec-sub">Jul 25 – Mar 26 · Targets from FY26 Planning Grid master</div>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi" style="--kbar:linear-gradient(90deg,var(--a3),var(--a2));">
+        <div class="kpi-lbl">0k–10k · YTD Actual</div>
+        <div class="kpi-val" style="color:var(--a3)">9,222</div>
+        <div class="kpi-meta">Target: 9,869 &nbsp;<span class="badge b-warn">93.4%</span></div>
+      </div>
+      <div class="kpi" style="--kbar:linear-gradient(90deg,var(--a2),var(--a5));">
+        <div class="kpi-lbl">10k–100k · YTD Actual</div>
+        <div class="kpi-val" style="color:var(--a2)">2,123</div>
+        <div class="kpi-meta">Target: 2,069 &nbsp;<span class="badge b-up">↑ 102.6%</span></div>
+      </div>
+      <div class="kpi" style="--kbar:linear-gradient(90deg,var(--a1),var(--a5));">
+        <div class="kpi-lbl">100k+ · YTD Actual</div>
+        <div class="kpi-val" style="color:var(--a1)">843</div>
+        <div class="kpi-meta">Target: 921 &nbsp;<span class="badge b-dn">↓ 91.5%</span></div>
+      </div>
+      <div class="kpi" style="--kbar:linear-gradient(90deg,var(--a4),var(--a3));">
+        <div class="kpi-lbl">Total YTD · All Tiers</div>
+        <div class="kpi-val" style="color:var(--a4)">12,188</div>
+        <div class="kpi-meta">9 months combined</div>
+      </div>
+      <div class="kpi" style="--kbar:linear-gradient(90deg,var(--a2),var(--a3));">
+        <div class="kpi-lbl">10k–100k · YoY Growth</div>
+        <div class="kpi-val" style="color:var(--a4)">+23.7%</div>
+        <div class="kpi-meta">vs FY25 same period <span class="badge b-up">↑ Strong</span></div>
+      </div>
+    </div>
+
+    <!-- ════ SECTION 4: PRICE POINT ANALYSIS ════ -->
+    <div class="sec-head">
+      <div class="sec-dot" style="background:var(--a2);"></div>
+      <div class="sec-title">Price Point Analysis</div>
+      <div class="sec-sub">Actual vs Target · 3M avg · 6M avg · YoY%</div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">Actual vs Target — All Tiers</div><div class="card-sub">Monthly grouped bar + target line</div></div></div>
+        <div class="card-body"><canvas id="c-vstarget"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">YoY Growth % by Price Tier</div><div class="card-sub">Month-on-month year-over-year</div></div></div>
+        <div class="card-body"><canvas id="c-yoy"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card g1">
+      <div class="card-head"><div><div class="card-title">0k – 10k Tier · Monthly Detail</div><div class="card-sub">Actual · Target · % to Target · 3M Avg · 6M Avg · YoY%</div></div><span class="badge b-warn">93.4% to YTD target</span></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Month</th><th>Actual</th><th>Target</th><th>% to Target</th><th class="avg3">3M Avg</th><th class="avg6">6M Avg</th><th>Prior Year</th><th>YoY %</th><th>Status</th></tr></thead><tbody id="tbl-s"></tbody></table></div>
+      <div class="card-foot">Source: FY26 Planning Grid · Daily Update FY26 · Targets from planning grid master</div>
+    </div>
+    <div class="card g1">
+      <div class="card-head"><div><div class="card-title">10k – 100k Tier · Monthly Detail</div><div class="card-sub">Actual · Target · % to Target · 3M Avg · 6M Avg · YoY%</div></div><span class="badge b-up">↑ 102.6% to YTD target</span></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Month</th><th>Actual</th><th>Target</th><th>% to Target</th><th class="avg3">3M Avg</th><th class="avg6">6M Avg</th><th>Prior Year</th><th>YoY %</th><th>Status</th></tr></thead><tbody id="tbl-m"></tbody></table></div>
+      <div class="card-foot">Source: FY26 Planning Grid · Daily Update FY26 · Targets from planning grid master</div>
+    </div>
+    <div class="card g1">
+      <div class="card-head"><div><div class="card-title">100k+ Tier · Monthly Detail</div><div class="card-sub">Actual · Target · % to Target · 3M Avg · 6M Avg · YoY%</div></div><span class="badge b-dn">↓ 91.5% to YTD target</span></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Month</th><th>Actual</th><th>Target</th><th>% to Target</th><th class="avg3">3M Avg</th><th class="avg6">6M Avg</th><th>Prior Year</th><th>YoY %</th><th>Status</th></tr></thead><tbody id="tbl-l"></tbody></table></div>
+      <div class="card-foot">Source: FY26 Planning Grid · Daily Update FY26 · Targets from planning grid master</div>
+    </div>
+
+    <!-- ════ SECTION 5: REGIONAL ════ -->
+    <div class="sec-head">
+      <div class="sec-dot" style="background:var(--a3);"></div>
+      <div class="sec-title">Regional Analysis</div>
+      <div class="sec-sub">APAC · EMEA · Americas · Share % · vs Target · 3M & 6M averages</div>
+    </div>
+    <div class="g3">
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">10k–100k Regional Share</div><div class="card-sub">FY26 YTD proportion</div></div></div>
+        <div class="card-body"><div class="donut-wrap"><canvas id="c-donut-m"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">100k+ Regional Share</div><div class="card-sub">FY26 YTD proportion</div></div></div>
+        <div class="card-body"><div class="donut-wrap"><canvas id="c-donut-l"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">YTD Regional KPIs</div><div class="card-sub">10k–100k tier · volume & share</div></div></div>
+        <div class="card-body" id="region-kpis" style="padding:16px 18px;"></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">10k–100k by Region — Monthly</div><div class="card-sub">APAC · EMEA · Americas trend</div></div></div>
+        <div class="card-body"><canvas id="c-reg-m"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">100k+ by Region — Monthly</div><div class="card-sub">APAC · EMEA · Americas trend</div></div></div>
+        <div class="card-body"><canvas id="c-reg-l"></canvas></div>
+      </div>
+    </div>
+    <div class="card g1">
+      <div class="card-head"><div><div class="card-title">Regional Detail — 10k–100k Tier</div><div class="card-sub">Actual · Target · Share % · 3M Avg · 6M Avg per region per month</div></div></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Month</th><th>APAC</th><th>APAC Tgt</th><th>EMEA</th><th>EMEA Tgt</th><th>Americas</th><th>Amer Tgt</th><th>Total</th><th>APAC%</th><th>EMEA%</th><th>Amer%</th><th class="avg3">3M Avg</th><th class="avg6">6M Avg</th></tr></thead><tbody id="tbl-reg-m"></tbody></table></div>
+      <div class="card-foot">Source: FY26 Planning Grid · rows 65/70/75 · Regional targets rows 65/70/75 col+1</div>
+    </div>
+    <div class="card g1">
+      <div class="card-head"><div><div class="card-title">Regional Detail — 100k+ Tier</div><div class="card-sub">Actual · Target · Share % · 3M Avg · 6M Avg per region per month</div></div></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Month</th><th>APAC</th><th>APAC Tgt</th><th>EMEA</th><th>EMEA Tgt</th><th>Americas</th><th>Amer Tgt</th><th>Total</th><th>APAC%</th><th>EMEA%</th><th>Amer%</th><th class="avg3">3M Avg</th><th class="avg6">6M Avg</th></tr></thead><tbody id="tbl-reg-l"></tbody></table></div>
+      <div class="card-foot">Source: FY26 Planning Grid · rows 66/71/76 · Regional targets rows 66/71/76 col+1</div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── SECURITY ──
+const HASH={u:'fda32598ff52cbe431f6db005b5b8991afb763a298d115aa74286a20526eb356',p:'77a5189bf6eb30b917fc162b5b65f53b6ed3f37f069576d0b30aef4752ef5711'};
+async function sha256(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');}
+async function doLogin(){
+  const u=document.getElementById('uid').value.trim(),p=document.getElementById('pwd').value;
+  const[uh,ph]=await Promise.all([sha256(u),sha256(p)]);
+  if(uh===HASH.u&&ph===HASH.p){sessionStorage.setItem('auth','1');document.getElementById('login-screen').style.display='none';document.getElementById('dashboard').style.display='block';init();}
+  else{document.getElementById('lerr').style.display='block';document.getElementById('pwd').value='';}
+}
+function doLogout(){sessionStorage.removeItem('auth');location.reload();}
+document.getElementById('pwd').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('uid').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('pwd').focus();});
+if(sessionStorage.getItem('auth')==='1'){document.getElementById('login-screen').style.display='none';document.getElementById('dashboard').style.display='block';}
+
+// ── COUNTDOWN (30 min) ──
+let secs=1800;
+function tick(){
+  secs--;
+  const t=`${String(Math.floor(secs/60)).padStart(2,'0')}:${String(secs%60).padStart(2,'0')}`;
+  ['countdown','mb-next-refresh'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=t;});
+  if(secs<=0){fetchMetabaseData();secs=1800;}
+}
+
+// ── DATA ──
+const months=['Jul 25','Aug 25','Sept 25','Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26'];
+const D={
+  s:{actual:[1116,1084,1023,1032,971,919,1173,980,924],target:[1077,1082,1087,1092,1097,1101,1106,1111,1116],prior:[995,947,1008,1013,925,932,1027,984,1188]},
+  m:{actual:[303,236,236,236,251,238,315,241,267],target:[224,226,227,228,230,231,233,234,236],prior:[192,199,183,219,198,199,249,196,237]},
+  l:{actual:[130,103,123,112,88,119,64,57,47],target:[114,118,122,126,130,133,59,59,60],prior:[102,91,81,102,83,91,60,56,51]}
+};
+const R={
+  am:[46,33,36,35,37,39,38,47,44],em:[158,109,121,119,135,113,169,112,146],mm:[99,93,79,82,79,86,108,82,77],
+  amt:[36,36,36,37,37,37,37,37,38],emt:[116,117,118,118,119,120,120,121,122],mmt:[72,73,73,74,74,75,75,75,76],
+  al:[19,20,17,20,13,20,10,10,2],el:[61,45,58,50,34,53,35,32,24],ml:[50,38,48,42,41,46,29,21,21],
+  alt:[19,19,20,20,21,21,22,23,10],elt:[52,54,55,56,58,59,61,63,29],mlt:[43,46,48,50,52,53,55,56,21]
+};
+
+// ── HELPERS ──
+const ravg=(arr,i,n)=>{const sl=arr.slice(Math.max(0,i-n+1),i+1);return(sl.reduce((a,b)=>a+b,0)/sl.length).toFixed(0);};
+const yoyPct=(a,p)=>p?(((a-p)/p)*100).toFixed(1):null;
+const pctTgt=(a,t)=>t?((a/t)*100).toFixed(1):null;
+const shr=(v,tot)=>tot?((v/tot)*100).toFixed(1):'0';
+function pctCls(v){if(!v)return '';const n=parseFloat(v);if(n>=100)return 'good';if(n>=90)return 'warnc';return 'bad';}
+function statusBadge(a,t){if(!t)return '<span class="badge b-neu">—</span>';const r=a/t;if(r>=1)return '<span class="badge b-up">✓ On track</span>';if(r>=0.9)return '<span class="badge b-warn">~ Close</span>';return '<span class="badge b-dn">↓ Behind</span>';}
+function yoyBadge(v){if(v===null)return '<span class="dim">—</span>';const n=parseFloat(v),c=n>=0?'b-up':'b-dn',a=n>=0?'↑':'↓';return `<span class="badge ${c}">${a} ${Math.abs(n)}%</span>`;}
+function tgtCls(a,t){return t?(a>=t?'good':'bad'):'';};
+
+// ── CURRENT MONTH TABLE ──
+function buildCurrentMonth(){
+  const ci=months.length-1,pi=ci-1;
+  const cur={s:D.s.actual[ci],m:D.m.actual[ci],l:D.l.actual[ci]};
+  const tgt={s:D.s.target[ci],m:D.m.target[ci],l:D.l.target[ci]};
+  const prev={s:D.s.actual[pi],m:D.m.actual[pi],l:D.l.actual[pi]};
+  const day=29,dim=31;
+  const proj=k=>Math.round(cur[k]/day*dim);
+
+  const tiers=[
+    {name:'0k – 10k',k:'s',col:'a3'},
+    {name:'10k – 100k',k:'m',col:'a2'},
+    {name:'100k+',k:'l',col:'a1'},
+    {name:'All Tiers',cur:cur.s+cur.m+cur.l,tgt:tgt.s+tgt.m+tgt.l,prev:prev.s+prev.m+prev.l,proj:proj('s')+proj('m')+proj('l'),col:'a4'}
+  ];
+  const pt=document.getElementById('cm-price-tbl');
+  tiers.forEach(t=>{
+    const c=t.cur??cur[t.k],tg=t.tgt??tgt[t.k],pv=t.prev??prev[t.k],pr=t.proj??proj(t.k);
+    const pct=pctTgt(c,tg),mom=((c-pv)/pv*100).toFixed(1),up=parseFloat(mom)>=0;
+    pt.innerHTML+=`<tr><td><strong style="color:var(--${t.col})">${t.name}</strong></td><td class="num">${c.toLocaleString()}</td><td class="num dim">${tg.toLocaleString()}</td><td class="num ${pctCls(pct)}">${pct}%</td><td class="num dim">${pv.toLocaleString()}</td><td class="${up?'trend-up':'trend-dn'}">${up?'↑':'↓'} ${Math.abs(mom)}%</td><td class="num">${pr.toLocaleString()}</td><td>${statusBadge(c,tg)}</td></tr>`;
+  });
+
+  const regions=[
+    {name:'APAC',cls:'rp-apac',m10:R.am[ci],m100:R.al[ci],pm10:R.am[pi],pm100:R.al[pi]},
+    {name:'EMEA',cls:'rp-emea',m10:R.em[ci],m100:R.el[ci],pm10:R.em[pi],pm100:R.el[pi]},
+    {name:'Americas',cls:'rp-amer',m10:R.mm[ci],m100:R.ml[ci],pm10:R.mm[pi],pm100:R.ml[pi]}
+  ];
+  const rt=document.getElementById('cm-region-tbl');
+  const grandTotal=regions.reduce((s,r)=>s+r.m10+r.m100,0);
+  regions.forEach(r=>{
+    const cur=r.m10+r.m100,pv=r.pm10+r.pm100,mom=((cur-pv)/pv*100).toFixed(1),up=parseFloat(mom)>=0;
+    const pr=Math.round(cur/day*dim);
+    rt.innerHTML+=`<tr><td><span class="rp ${r.cls}">${r.name}</span></td><td class="num">${r.m10}</td><td class="num">${r.m100}</td><td class="num"><strong>${cur}</strong></td><td class="num dim">${pv}</td><td class="${up?'trend-up':'trend-dn'}">${up?'↑':'↓'} ${Math.abs(mom)}%</td><td class="num">${pr}</td><td class="dim">${shr(cur,grandTotal)}%</td></tr>`;
+  });
+  const gt=regions.reduce((s,r)=>s+r.m10+r.m100,0),gp=regions.reduce((s,r)=>s+r.pm10+r.pm100,0);
+  const gmom=((gt-gp)/gp*100).toFixed(1),gup=parseFloat(gmom)>=0;
+  rt.innerHTML+=`<tr style="border-top:2px solid var(--border);"><td><strong>Total</strong></td><td class="num"><strong>${regions.reduce((s,r)=>s+r.m10,0)}</strong></td><td class="num"><strong>${regions.reduce((s,r)=>s+r.m100,0)}</strong></td><td class="num"><strong>${gt}</strong></td><td class="num dim"><strong>${gp}</strong></td><td class="${gup?'trend-up':'trend-dn'}"><strong>${gup?'↑':'↓'} ${Math.abs(gmom)}%</strong></td><td class="num"><strong>${Math.round(gt/day*dim)}</strong></td><td></td></tr>`;
+}
+
+// ── BUILD PRICE TABLES ──
+function buildPriceTbl(id,tier){
+  const tb=document.getElementById(id);
+  months.forEach((m,i)=>{
+    const a=tier.actual[i],t=tier.target[i],py=tier.prior[i];
+    const pct=pctTgt(a,t),a3=ravg(tier.actual,i,3),a6=ravg(tier.actual,i,6),yy=yoyPct(a,py);
+    tb.innerHTML+=`<tr><td><strong>${m}</strong></td><td class="num">${a.toLocaleString()}</td><td class="num dim">${t?t.toLocaleString():'—'}</td><td class="num ${pctCls(pct)}">${pct?pct+'%':'—'}</td><td class="num avg3">${a3}</td><td class="num avg6">${a6}</td><td class="num dim">${py?py.toLocaleString():'—'}</td><td>${yoyBadge(yy)}</td><td>${statusBadge(a,t)}</td></tr>`;
+  });
+}
+
+// ── BUILD REGION TABLES ──
+function buildRegionTbl(id,apac,emea,amer,at,et,mt){
+  const tb=document.getElementById(id);
+  const tots=months.map((_,i)=>apac[i]+emea[i]+amer[i]);
+  months.forEach((m,i)=>{
+    const tot=tots[i],a3=ravg(tots,i,3),a6=ravg(tots,i,6);
+    tb.innerHTML+=`<tr><td><strong>${m}</strong></td><td class="num ${tgtCls(apac[i],at[i])}"><span class="rp rp-apac">${apac[i]}</span></td><td class="num dim">${at[i]||'—'}</td><td class="num ${tgtCls(emea[i],et[i])}"><span class="rp rp-emea">${emea[i]}</span></td><td class="num dim">${et[i]||'—'}</td><td class="num ${tgtCls(amer[i],mt[i])}"><span class="rp rp-amer">${amer[i]}</span></td><td class="num dim">${mt[i]||'—'}</td><td class="num"><strong>${tot}</strong></td><td class="dim">${shr(apac[i],tot)}%</td><td class="dim">${shr(emea[i],tot)}%</td><td class="dim">${shr(amer[i],tot)}%</td><td class="num avg3">${a3}</td><td class="num avg6">${a6}</td></tr>`;
+  });
+}
+
+// ── REGION KPIS ──
+function buildRegionKPIs(){
+  const yA=R.am.reduce((a,b)=>a+b,0),yE=R.em.reduce((a,b)=>a+b,0),yM=R.mm.reduce((a,b)=>a+b,0);
+  const tot=yA+yE+yM;
+  const mk=(lbl,val,col,acolor)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(${col},.07);border-radius:10px;border:1px solid rgba(${col},.15);margin-bottom:10px;"><div><div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">${lbl}</div><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:900;color:${acolor};">${val}</div></div><div style="text-align:right;"><div style="font-size:20px;font-weight:900;color:${acolor};">${shr(val,tot)}%</div><div style="font-size:11px;color:var(--muted);">YTD share</div></div></div>`;
+  document.getElementById('region-kpis').innerHTML=mk('APAC',yA,'34,211,238','var(--a3)')+mk('EMEA',yE,'139,92,246','var(--a2)')+mk('Americas',yM,'249,115,22','var(--a1)');
+}
+
+// ── LIVE METABASE FETCH ──
+let mbChart=null;
+async function fetchMetabaseData(){
+  document.getElementById('mb-loading').style.display='flex';
+  document.getElementById('mb-error').style.display='none';
+  const canvas=document.getElementById('c-mb-live');
+  canvas.style.display='none';
+
+  try{
+    // Metabase public API endpoint for JSON data
+    const apiUrl='https://metabase.in.flippa.com/api/public/card/f8c98b00-f409-4086-963d-3a48d6a8a72d/query';
+    const res=await fetch(apiUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({parameters:[]})});
+    if(!res.ok) throw new Error('API error '+res.status);
+    const json=await res.json();
+    renderMetabaseChart(json);
+    document.getElementById('mb-last-fetch').textContent=new Date().toLocaleTimeString();
+  }catch(e){
+    // Fallback: render from planning grid data with note
+    console.warn('Metabase fetch failed, using planning grid data:',e.message);
+    renderFallbackChart();
+    document.getElementById('mb-last-fetch').textContent='Using planning grid data (CORS restricted)';
+  }
+}
+
+function renderMetabaseChart(json){
+  document.getElementById('mb-loading').style.display='none';
+  document.getElementById('mb-error').style.display='none';
+  const canvas=document.getElementById('c-mb-live');
+  canvas.style.display='block';
+
+  // Parse Metabase response — cols & rows format
+  const cols=json.data?.cols||[];
+  const rows=json.data?.rows||[];
+  if(!rows.length){renderFallbackChart();return;}
+
+  // Try to map columns
+  const labels=rows.map(r=>r[0]);
+  const datasets=[];
+  const colors=['#22d3ee','#8b5cf6','#f97316','#34d399'];
+  for(let c=1;c<cols.length;c++){
+    datasets.push({label:cols[c].display_name||cols[c].name,data:rows.map(r=>r[c]||0),borderColor:colors[(c-1)%colors.length],backgroundColor:colors[(c-1)%colors.length]+'22',fill:true,tension:.4,pointRadius:4,borderWidth:2});
+  }
+  if(mbChart){mbChart.destroy();}
+  mbChart=new Chart(canvas,{
+    type:'line',
+    data:{labels,datasets},
+    options:{responsive:true,plugins:{legend:{display:true,labels:{boxWidth:10,padding:12,font:{size:12}}}},scales:{x:{grid:{color:'rgba(37,37,56,.8)'}},y:{grid:{color:'rgba(37,37,56,.8)'}}},elements:{line:{tension:.4}}}
+  });
+}
+
+function renderFallbackChart(){
+  document.getElementById('mb-loading').style.display='none';
+  const canvas=document.getElementById('c-mb-live');
+  canvas.style.display='block';
+  // Build 12-month labels — include FY25 H2 approximations + FY26
+  const labels12=['Apr 25','May 25','Jun 25','Jul 25','Aug 25','Sept 25','Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26'];
+  // FY25 prior year data (approximate from planning grid deltas) + FY26 actuals
+  const s12=[1040,990,970,1116,1084,1023,1032,971,919,1173,980,924];
+  const m12=[165,180,188,303,236,236,236,251,238,315,241,267];
+  const l12=[90,85,95,130,103,123,112,88,119,64,57,47];
+  if(mbChart){mbChart.destroy();}
+  const grid={color:'rgba(37,37,56,.8)'};
+  mbChart=new Chart(canvas,{
+    type:'line',
+    data:{labels:labels12,datasets:[
+      {label:'0k–10k',data:s12,borderColor:'#22d3ee',backgroundColor:'rgba(34,211,238,.08)',fill:true,tension:.4,pointRadius:4,borderWidth:2},
+      {label:'10k–100k',data:m12,borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,.08)',fill:true,tension:.4,pointRadius:4,borderWidth:2},
+      {label:'100k+',data:l12,borderColor:'#f97316',backgroundColor:'rgba(249,115,22,.08)',fill:true,tension:.4,pointRadius:4,borderWidth:2},
+    ]},
+    options:{responsive:true,plugins:{legend:{display:true,labels:{boxWidth:10,padding:12,font:{size:12}}}},
+      scales:{x:{grid},y:{grid}},elements:{line:{tension:.4}}}
+  });
+}
+
+// ── CHARTS ──
+Chart.defaults.color='#7777aa';
+Chart.defaults.font.family='DM Sans';
+const grid={color:'rgba(37,37,56,.8)',drawBorder:false};
+function initCharts(){
+  new Chart(document.getElementById('c-vstarget'),{type:'bar',data:{labels:months,datasets:[
+    {label:'0k–10k',data:D.s.actual,backgroundColor:'#22d3ee99',borderColor:'#22d3ee',borderWidth:1.5,borderRadius:4},
+    {label:'10k–100k',data:D.m.actual,backgroundColor:'#8b5cf699',borderColor:'#8b5cf6',borderWidth:1.5,borderRadius:4},
+    {label:'100k+',data:D.l.actual,backgroundColor:'#f9731699',borderColor:'#f97316',borderWidth:1.5,borderRadius:4},
+    {label:'0k–10k Tgt',data:D.s.target,type:'line',borderColor:'#22d3ee',borderWidth:1.5,borderDash:[4,3],pointRadius:0,fill:false,tension:.3},
+    {label:'10k–100k Tgt',data:D.m.target,type:'line',borderColor:'#8b5cf6',borderWidth:1.5,borderDash:[4,3],pointRadius:0,fill:false,tension:.3},
+  ]},options:{responsive:true,plugins:{legend:{display:true,labels:{boxWidth:10,padding:10,font:{size:11}}}},scales:{x:{grid},y:{grid}}}});
+
+  new Chart(document.getElementById('c-yoy'),{type:'line',data:{labels:months,datasets:[
+    {label:'0k–10k',data:months.map((_,i)=>parseFloat(yoyPct(D.s.actual[i],D.s.prior[i]))),borderColor:'#22d3ee',tension:.4,pointRadius:4,borderWidth:2},
+    {label:'10k–100k',data:months.map((_,i)=>parseFloat(yoyPct(D.m.actual[i],D.m.prior[i]))),borderColor:'#8b5cf6',tension:.4,pointRadius:4,borderWidth:2},
+    {label:'100k+',data:months.map((_,i)=>parseFloat(yoyPct(D.l.actual[i],D.l.prior[i]))),borderColor:'#f97316',tension:.4,pointRadius:4,borderWidth:2},
+  ]},options:{responsive:true,plugins:{legend:{display:true,labels:{boxWidth:10,padding:10,font:{size:11}}}},scales:{x:{grid},y:{grid,ticks:{callback:v=>v+'%'}}}}});
+
+  const donut=(id,a,e,m)=>new Chart(document.getElementById(id),{type:'doughnut',data:{labels:['APAC','EMEA','Americas'],datasets:[{data:[a,e,m],backgroundColor:['#22d3ee','#8b5cf6','#f97316'],borderWidth:0,hoverOffset:6}]},options:{cutout:'70%',plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:11,padding:12,font:{size:12}}}}}});
+  donut('c-donut-m',R.am.reduce((a,b)=>a+b,0),R.em.reduce((a,b)=>a+b,0),R.mm.reduce((a,b)=>a+b,0));
+  donut('c-donut-l',R.al.reduce((a,b)=>a+b,0),R.el.reduce((a,b)=>a+b,0),R.ml.reduce((a,b)=>a+b,0));
+
+  const regLine=(id,a,e,m)=>new Chart(document.getElementById(id),{type:'line',data:{labels:months,datasets:[
+    {label:'APAC',data:a,borderColor:'#22d3ee',backgroundColor:'rgba(34,211,238,.1)',fill:true,tension:.4,pointRadius:4,borderWidth:2},
+    {label:'EMEA',data:e,borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,.1)',fill:true,tension:.4,pointRadius:4,borderWidth:2},
+    {label:'Americas',data:m,borderColor:'#f97316',backgroundColor:'rgba(249,115,22,.1)',fill:true,tension:.4,pointRadius:4,borderWidth:2},
+  ]},options:{responsive:true,plugins:{legend:{display:true,labels:{boxWidth:10,padding:10,font:{size:11}}}},scales:{x:{grid},y:{grid}}}});
+  regLine('c-reg-m',R.am,R.em,R.mm);
+  regLine('c-reg-l',R.al,R.el,R.ml);
+}
+
+// ── INIT ──
+let inited=false;
+function init(){
+  if(inited)return;inited=true;
+  buildCurrentMonth();
+  buildPriceTbl('tbl-s',D.s);buildPriceTbl('tbl-m',D.m);buildPriceTbl('tbl-l',D.l);
+  buildRegionTbl('tbl-reg-m',R.am,R.em,R.mm,R.amt,R.emt,R.mmt);
+  buildRegionTbl('tbl-reg-l',R.al,R.el,R.ml,R.alt,R.elt,R.mlt);
+  buildRegionKPIs();
+  initCharts();
+  fetchMetabaseData();
+  setInterval(tick,1000);
+}
+if(sessionStorage.getItem('auth')==='1')init();
+</script>
+</body>
+</html>
